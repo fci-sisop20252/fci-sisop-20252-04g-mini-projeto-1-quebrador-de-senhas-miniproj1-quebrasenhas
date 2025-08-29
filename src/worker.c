@@ -94,24 +94,11 @@ void save_result(int worker_id, const char *password) {
     }
 }
 
-
-
-/**
- * FIXME: Apagar print_string()
- * 
- * Usado para printar strings durante os testes
- */
-void print_string(char string[], int string_size) {
-    for (int i = 0; i < string_size; i++) putchar(string[i]);
-    putchar('\n');
-}
-
-
-
 /*
  * FIXME: Remover esse comentário
- * NOTE: Para rodar um teste, rode o programa com os seguintse argumentos: ./worker 900150983cd24fb0d6963f7d28e17f72 aaa ccc abc 3 10
- *                                                                         ./worker <hash> <start> <end> <charset> <len> <id>
+ * NOTE: Para rodar um teste, compile o programa assim: gcc src/worker.c src/hash_utils.c -o worker
+ *       e rode com os seguintes argumentos: ./worker 900150983cd24fb0d6963f7d28e17f72 aaa ccc abc 3 10
+ *                                          (./worker <hash> <start> <end> <charset> <len> <id>)
 */
 
 /**
@@ -171,8 +158,7 @@ int main(int argc, char *argv[]) {
         
         // Verificar se chegou ao fim do intervalo
         if (increment_password_awenser == 0) break;
-        
-        print_string(current_password, password_len);
+
         passwords_checked++;
     }
     
