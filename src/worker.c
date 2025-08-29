@@ -95,6 +95,7 @@ void save_result(int worker_id, const char *password) {
 }
 
 
+
 /**
  * FIXME: Apagar print_string()
  * 
@@ -105,30 +106,13 @@ void print_string(char string[], int string_size) {
     putchar('\n');
 }
 
-/**
- * FIXME: Apagar esse main()
- * 
- * Usado apenas para testar o increment_password() e o save_result()
- */
-int main2() { // Main2
-    // Teste do increment_password():
-    char teste[] = "aaaaa";
-    char set[]   = "abc";
 
-    int teste_len = sizeof(teste) - 1; // -1 para remover o \0
-    int set_len   = sizeof(set)   - 1; // -1 para remover o \0
 
-    print_string(teste, teste_len);
-    while(increment_password(teste, set, set_len, teste_len)) print_string(teste, teste_len);
-
-    // Teste do save_result():
-    int worker = 99999;
-    char senha[] = "bom dia rapaziada :)";
-
-    save_result(worker, senha);
-
-    return 0;
-}
+/*
+ * FIXME: Remover esse comentário
+ * NOTE: Para rodar um teste, rode o programa com os seguintse argumentos: ./worker 900150983cd24fb0d6963f7d28e17f72 aaa ccc abc 3 10
+ *                                                                         ./worker <hash> <start> <end> <charset> <len> <id>
+*/
 
 /**
  * Função principal do worker
@@ -165,21 +149,30 @@ int main(int argc, char *argv[]) {
     
     // Loop principal de verificação
     while (1) {
-        // TODO 3: Verificar periodicamente se outro worker já encontrou a senha
-        // DICA: A cada PROGRESS_INTERVAL senhas, verificar se arquivo resultado existe
+        // Verificar periodicamente se outro worker já encontrou a senha
+        if (passwords_checked % PROGRESS_INTERVAL == 0) {
+            if (access(RESULT_FILE, F_OK) == 0) {
+                printf("Outro worker ja encontrou a senha!\n");
+                break;
+            }
+        }
         
-        // TODO 4: Calcular o hash MD5 da senha atual
-        // IMPORTANTE: Use a biblioteca MD5 FORNECIDA - md5_string(senha, hash_buffer)
+        // Calcular o hash MD5 da senha atual
+        md5_string(current_password, computed_hash);
         
-        // TODO 5: Comparar com o hash alvo
-        // Se encontrou: salvar resultado e terminar
+        // Comparar com o hash alvo
+        if (strcmp(computed_hash, target_hash) == 0) {
+            save_result(worker_id, current_password);
+            break;
+        }
         
-        // TODO 6: Incrementar para a próxima senha
-        // DICA: Use a função increment_password implementada acima
+        // Incrementar para a próxima senha
+        int increment_password_awenser = increment_password(current_password, charset, charset_len, password_len);
         
-        // TODO: Verificar se chegou ao fim do intervalo
-        // Se sim: terminar loop
+        // Verificar se chegou ao fim do intervalo
+        if (increment_password_awenser == 0) break;
         
+        print_string(current_password, password_len);
         passwords_checked++;
     }
     
