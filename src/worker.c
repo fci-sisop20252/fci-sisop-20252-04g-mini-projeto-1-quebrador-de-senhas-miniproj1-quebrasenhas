@@ -32,21 +32,27 @@
  * @return 1 se incrementou com sucesso, 0 se chegou ao limite (overflow)
  */
 int increment_password(char *password, const char *charset, int charset_len, int password_len) {
-    
-    // TODO 1: Implementar o algoritmo de incremento de senha
-    // OBJETIVO: Incrementar senha como um contador (ex: aaa -> aab -> aac -> aad...)
-    // DICA: Começar do último caractere, como somar 1 em um número
-    // DICA: Se um caractere "estoura", volta ao primeiro e incrementa o caracter a esquerda (aay -> aaz -> aba)
-    
-    // IMPLEMENTE AQUI:
-    // - Percorrer password de trás para frente
-    // - Para cada posição, encontrar índice atual no charset
-    // - Incrementar índice
-    // - Se não estourou: atualizar caractere e retornar 1
-    // - Se estourou: definir como primeiro caractere e continuar loop
-    // - Se todos estouraram: retornar 0 (fim do espaço)
-    
-    return 0;  // SUBSTITUA por sua implementação
+    // Incrementa a partir da ultima letra
+    // Se a ultima letra fazer a "volta" toda no charset, incrementa na proxima, até o fim de *password
+    for (int i = password_len - 1; i >= 0; i--) {
+
+        // Acha a letra password[i] em charset[charset_index]
+        int charset_index = 0;
+        while (password[i] != charset[charset_index] && charset_index < charset_len) charset_index++;
+
+        if (charset_index >= charset_len) return 0; // Retorna 0 se a letra em password não for encontrada em charset
+
+        // Retorna 1 se foi possivel incrementar a letra, caso contrário reseta password[i] roda o loop de novo
+        if (charset_index < charset_len - 1) {
+            password[i] = charset[charset_index + 1];
+            return 1;
+        }
+        else {
+            password[i] = charset[0];
+        }
+    }
+
+    return 0; // Retrna 0 quando todas as opções ja forem testadas
 }
 
 /**
@@ -71,15 +77,57 @@ int check_result_exists() {
  * Usa O_CREAT | O_EXCL para garantir escrita atômica (apenas um worker escreve)
  */
 void save_result(int worker_id, const char *password) {
-    // TODO 2: Implementar gravação atômica do resultado
-    // OBJETIVO: Garantir que apenas UM worker escreva no arquivo
-    // DICA: Use O_CREAT | O_EXCL - falha se arquivo já existe
-    // FORMATO DO ARQUIVO: "worker_id:password\n"
-    
-    // IMPLEMENTE AQUI:
-    // - Tentar abrir arquivo com O_CREAT | O_EXCL | O_WRONLY
-    // - Se sucesso: escrever resultado e fechar
-    // - Se falhou: outro worker já encontrou
+    // Abre o arquivo no modo:
+    //          O_CREAT              | O_EXCL              | O_WRONLY  , 0644
+    // uo seja: Criar se não existir | Falha se ja existir | Só escrita, só eu posso ler e escrever e os outros só podem ler
+    int file = open(RESULT_FILE, O_CREAT | O_EXCL | O_WRONLY, 0644);
+
+    if (file >= 0) {
+        char buffer[256];
+        int len = snprintf(buffer, sizeof(buffer), "%d:%s", worker_id, password); // Altera o buffer para a string desejada
+        write(file, buffer, len);                                                 // e retona o tamanho exato
+
+        close(file);
+
+        printf("Worker: [%d] encontrou o resultado!\n", worker_id);
+        printf("Resultado salvo: %s\n", password);
+    }
+}
+
+
+/**
+ * FIXME: Apagar print_string()
+ * 
+ * Usado para printar strings durante os testes
+ */
+void print_string(char string[], int string_size) {
+    for (int i = 0; i < string_size; i++) putchar(string[i]);
+    putchar('\n');
+}
+
+/**
+ * FIXME: Apagar esse main()
+ * 
+ * Usado apenas para testar o increment_password() e o save_result()
+ */
+int main2() { // Main2
+    // Teste do increment_password():
+    char teste[] = "aaaaa";
+    char set[]   = "abc";
+
+    int teste_len = sizeof(teste) - 1; // -1 para remover o \0
+    int set_len   = sizeof(set)   - 1; // -1 para remover o \0
+
+    print_string(teste, teste_len);
+    while(increment_password(teste, set, set_len, teste_len)) print_string(teste, teste_len);
+
+    // Teste do save_result():
+    int worker = 99999;
+    char senha[] = "bom dia rapaziada :)";
+
+    save_result(worker, senha);
+
+    return 0;
 }
 
 /**
