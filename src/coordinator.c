@@ -60,13 +60,13 @@ void index_to_password(long long index, const char *charset, int charset_len,
 
 /**
  * Função principal do coordenador
+ * @return 0 em caso ce sucesso, 1 em erro de uso
  */
 int main(int argc, char *argv[]) {
-    // TODO 1: Validar argumentos de entrada
-    // Verificar se argc == 5 (programa + 4 argumentos)
-    // Se não, imprimir mensagem de uso e sair com código 1
-    
-    // IMPLEMENTE AQUI: verificação de argc e mensagem de erro
+    if (argc != 5) {
+        fprintf(stderr, "Uso interno: %s <hash> <pass_len> <charset> <num_workers> <charset_len>\n", argv[0]);
+        return 1;
+    }
     
     // Parsing dos argumentos (após validação)
     const char *target_hash = argv[1];
@@ -75,10 +75,24 @@ int main(int argc, char *argv[]) {
     int num_workers = atoi(argv[4]);
     int charset_len = strlen(charset);
     
-    // TODO: Adicionar validações dos parâmetros
-    // - password_len deve estar entre 1 e 10
-    // - num_workers deve estar entre 1 e MAX_WORKERS
-    // - charset não pode ser vazio
+    // Validações dos parâmetros
+    // password_len deve estar entre 1 e 10
+    if (password_len < 1 || password_len > 10) {
+        fprintf(stderr, "Tamanho de senha invalido [%d]. Valor deve estar entre 1 e 10\n", password_len);
+        return 1;
+    }
+    
+    // num_workers deve estar entre 1 e MAX_WORKERS
+    if (num_workers < 1 || num_workers > MAX_WORKERS) {
+        fprintf(stderr, "Quantidade de workers invalida [%d]. Quantidade deve ser entre 1 e %d\n", num_workers, MAX_WORKERS);
+        return 1;
+    }
+    
+    // charset não pode ser vazio
+    if (strlen(charset) == 0) {
+        fprintf(stderr, "Charset nao pode estar vazio!\n");
+        return 1;
+    }
     
     printf("=== Mini-Projeto 1: Quebra de Senhas Paralelo ===\n");
     printf("Hash MD5 alvo: %s\n", target_hash);
@@ -95,14 +109,13 @@ int main(int argc, char *argv[]) {
     
     // Registrar tempo de início
     time_t start_time = time(NULL);
-    
-    // TODO 2: Dividir o espaço de busca entre os workers
-    // Calcular quantas senhas cada worker deve verificar
-    // DICA: Use divisão inteira e distribua o resto entre os primeiros workers
-    
-    // IMPLEMENTE AQUI:
-    // long long passwords_per_worker = ?
-    // long long remaining = ?
+
+    // Dividindo quantidade de senhas testadas entre os workers
+    long long total_passwords = 1;
+    for (int i = 0; i < password_len; i++) total_passwords *= charset_len;
+
+    long long passwords_per_worker = total_passwords / num_workers;
+    long long remaining = total_passwords % num_workers;
     
     // Arrays para armazenar PIDs dos workers
     pid_t workers[MAX_WORKERS];
