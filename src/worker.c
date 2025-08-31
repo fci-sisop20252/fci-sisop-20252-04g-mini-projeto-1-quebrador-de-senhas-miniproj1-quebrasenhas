@@ -148,7 +148,10 @@ int main(int argc, char *argv[]) {
         md5_string(current_password, computed_hash);
         
         // Comparar com o hash alvo
-        if (strcmp(computed_hash, target_hash) == 0) {
+        int pass_found = strcmp(computed_hash, target_hash);
+        passwords_checked++;
+        
+        if (pass_found == 0) {
             save_result(worker_id, current_password);
             break;
         }
@@ -158,8 +161,6 @@ int main(int argc, char *argv[]) {
         
         // Verificar se chegou ao fim do intervalo
         if (increment_password_awenser == 0) break;
-
-        passwords_checked++;
     }
     
     // Estatísticas finais
