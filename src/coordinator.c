@@ -63,7 +63,7 @@ void index_to_password(long long index, const char *charset, int charset_len,
  * @return 0 em caso de sucesso, 1 em erro de uso, 2 caso senha não encontrada
  */
 int main(int argc, char *argv[]) {
-    if (argc != 5) {
+    if (argc != 6) {
         fprintf(stderr, "Uso interno: %s <hash> <pass_len> <charset> <num_workers> <charset_len>\n", argv[0]);
         return 1;
     }
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < password_len; i++) total_passwords *= charset_len;
 
     long long passwords_per_worker = total_passwords / num_workers;
-    long long remaining = total_passwords % num_workers;
+    // long long remaining = total_passwords % num_workers;
 
     // Arrays para armazenar PIDs dos workers
     pid_t workers[MAX_WORKERS];
@@ -125,13 +125,10 @@ int main(int argc, char *argv[]) {
     // Criando processos filhos com fork(), cada um com uma parte das senhas a serem testadas
     for (int i = 0; i < num_workers; i++) {
         long long start_index = i * passwords_per_worker;
-        long long end_index   = start_index + passwords_per_worker;
+        long long end_index   = start_index + passwords_per_worker - 1;
 
-        char start_pass [password_len];
-        char end_pass [password_len];
-
-        // OPTIMIZE: Tranformar start/end_index para start/end_pass
-        // Acho que tem um jeito melhor de fazer isso, só n consegui pensar ainda
+        char start_pass [password_len + 1];
+        char end_pass [password_len + 1];
 
         // Gerando start_pass a partir do start_index
         long long tmp = start_index;
@@ -139,6 +136,7 @@ int main(int argc, char *argv[]) {
             start_pass[i] = charset[tmp % charset_len];
             tmp /= charset_len;
         }
+        start_pass[password_len] = '\0';
 
         // Gerando end_pass a partir do end_index
         tmp = end_index;
@@ -146,21 +144,23 @@ int main(int argc, char *argv[]) {
             end_pass[i] = charset[tmp % charset_len];
             tmp /= charset_len;
         }
+        end_pass[password_len] = '\0';
 
         // TODO 4: Usar fork() para criar processo filho
         pid_t pid = fork();
-
+        
         if (pid < 0) {
             perror("frok");
             exit(1);
         }
-
+        
         else if (pid == 0) { // Processo filho
             char password_len_str [16];
             snprintf(password_len_str, sizeof(password_len_str), "%d", password_len);
             
             char worker_id_str[16];
             snprintf(worker_id_str, sizeof(worker_id_str), "%d", i);
+            // printf("./worker worker %s %s %s %s %s %s", target_hash, start_pass, end_pass, charset, password_len_str, worker_id_str);
             
             // Uso do worker: ./worker <hash> <start> <end> <charset> <len> <id>\n"
             execl("./worker", "worker", target_hash, start_pass, end_pass, charset, password_len_str, worker_id_str, (char*)NULL);
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
             workers[i] = pid;
         }
     }
-    printf("\nTodos os workers foram iniciados. Aguardando conclusão...\n");
+    printf("\nTodos os workers foram iniciados. Aguardando conclusão... \n");
 
     int finished_workers = 0;
     for (int i = 0; i < num_workers; i++) {
@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
 
         int worker = -1;
         for (int j = 0; j < MAX_WORKERS; j++) {
-            if (workers[j] = pid) {
+            if (workers[j] == pid) {
                 worker = j;
                 break;
             }
@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
     int file = open(RESULT_FILE, O_RDONLY);
 
     if (file < 0) {
-        printf("Senha não encontrada!");
+        printf("Senha não encontrada!\n");
         return 2;
     }
 
@@ -250,19 +250,18 @@ int main(int argc, char *argv[]) {
     char *worker_id = buffer;
     char *password = infos + 1;
 
-
     char hash_found[33];
     md5_string(password, hash_found);
 
-    if (strcmp(hash_found, target_hash))
-        printf("Senha encontrada com sucesso!\nHash: %s\nSenha: %s", hash_found, password);
+    if (strcmp(hash_found, target_hash) == 0)
+        printf("Senha encontrada com sucesso!\nWorker: %s\nHash: %s\nSenha: %s\n", worker_id, hash_found, password);
     else
-        printf("Senha encontrada incorreta (tenho a impressão de que vou ver muito essa msgm durante o debug)");
+        printf("Senha encontrada incorreta (tenho a impressão de que vou ver muito essa msgm durante o debug)\n");
 
     // Estatísticas finais (opcional)
     // TODO: Calcular e exibir estatísticas de performance
 
-    printf("Tempo de execucao: %fsegundos", elapsed_time);
+    printf("Tempo de execucao: %fsegundos\n", elapsed_time);
 
     return 0;
 }

@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     // Contadores para estatísticas
     long long passwords_checked = 0;
     time_t start_time = time(NULL);
-    time_t last_progress_time = start_time;
+    // time_t last_progress_time = start_time;
     
     // Loop principal de verificação
     while (1) {
