@@ -89,16 +89,18 @@ void save_result(int worker_id, const char *password) {
 
         close(file);
 
+        printf("\n\n\n|==================================================|\n");
+        printf(      "|============== Resultado encontrado! =============|\n");
+        printf(      "|==================================================|\n\n");
         printf("Worker: [%d] encontrou o resultado!\n", worker_id);
-        printf("Resultado salvo: %s\n", password);
+        printf("Resultado salvo: %s\n\n", password);
     }
 }
 
 /*
- * FIXME: Remover esse comentário
  * NOTE: Para rodar um teste, compile o programa assim: gcc src/worker.c src/hash_utils.c -o worker
  *       e rode com os seguintes argumentos: ./worker 900150983cd24fb0d6963f7d28e17f72 aaa ccc abc 3 10
- *                                          (./worker <hash> <start> <end> <charset> <len> <id>)
+ *                                           ./worker <hash> <start> <end> <charset> <len> <id>
 */
 
 /**
@@ -119,8 +121,9 @@ int main(int argc, char *argv[]) {
     int password_len = atoi(argv[5]);
     int worker_id = atoi(argv[6]);
     int charset_len = strlen(charset);
-    
-    printf("[Worker %d] Iniciado: %s até %s\n", worker_id, start_password, end_password);
+
+    usleep(100000); // 0.1 de dalay para não embolar os prints
+    printf("[Worker %2d] Iniciado: %s até %s\n", worker_id, start_password, end_password);
     
     // Buffer para a senha atual
     char current_password[11];
@@ -139,7 +142,7 @@ int main(int argc, char *argv[]) {
         // Verificar periodicamente se outro worker já encontrou a senha
         if (passwords_checked % PROGRESS_INTERVAL == 0) {
             if (access(RESULT_FILE, F_OK) == 0) {
-                printf("Outro worker ja encontrou a senha!\n");
+                printf("Outro worker ja encontrou a senha!\n\n");
                 break;
             }
         }
